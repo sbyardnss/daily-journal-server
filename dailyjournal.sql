@@ -3,7 +3,7 @@ CREATE TABLE `Entries` (
     `concept` VARCHAR(50),
     `entry` VARCHAR(140),
     `mood_id` int,
-    date DATE NOT NULL,
+    `date` DATE NOT NULL,
     FOREIGN KEY(`mood_id`) REFERENCES `Moods`(`id`)
 );
 CREATE TABLE `Moods` (
@@ -40,3 +40,5 @@ INSERT INTO `Entry_Tags` VALUES (null, 4, 2);
 INSERT INTO `Entry_Tags` VALUES (null, 4, 3);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 1);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 2);
+
+DROP TABLE `Entries`;
