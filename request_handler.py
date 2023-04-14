@@ -1,7 +1,7 @@
 from urllib.parse import urlparse, parse_qs
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_entries, get_single_entry, create_entry
+from views import get_all_entries, get_single_entry, create_entry, delete_entry, get_all_moods, search_entries
 
 
 class HandleRequests(BaseHTTPRequestHandler):
@@ -12,7 +12,7 @@ class HandleRequests(BaseHTTPRequestHandler):
         self._set_headers(200)
         response = {}
         parsed = self.parse_url(self.path)
-        print(parsed)
+        print(self.path)
         if '?' not in self.path:
             (resource, id) = parsed
             if resource == "entries":
@@ -20,15 +20,19 @@ class HandleRequests(BaseHTTPRequestHandler):
                     response = get_single_entry(id)
                 else:
                     response = get_all_entries()
+            if  resource == "moods":
+                response = get_all_moods()
         else:
             (resource, query) = parsed
+            if resource == "entries":
+                response = search_entries(query['q'][0])
         self.wfile.write(json.dumps(response).encode())
 
     def do_POST(self):
         """function for posting new dictionaries"""
         self._set_headers(201)
         content_len = int(self.headers.get('content-length', 0))
-        print(content_len)
+        print(self.headers)
         post_body = self.rfile.read(content_len)
         post_body = json.loads(post_body)
         (resource, id) = self.parse_url(self.path)
@@ -36,6 +40,14 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "entries":
             new_entry = create_entry(post_body)
             self.wfile.write(json.dumps(new_entry).encode())
+
+    def do_DELETE(self):
+        """function for handling delete requests to server"""
+        self._set_headers(204)
+        (resource, id) = self.parse_url(self.path)
+        if resource == "entries":
+            delete_entry(id)
+            self.wfile.write("".encode())
 
     def _set_headers(self, status):
         # Notice this Docstring also includes information about the arguments passed to the function
