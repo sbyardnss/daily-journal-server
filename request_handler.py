@@ -1,7 +1,7 @@
 from urllib.parse import urlparse, parse_qs
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_entries
+from views import get_all_entries, get_single_entry, create_entry
 
 
 class HandleRequests(BaseHTTPRequestHandler):
@@ -16,10 +16,26 @@ class HandleRequests(BaseHTTPRequestHandler):
         if '?' not in self.path:
             (resource, id) = parsed
             if resource == "entries":
-                response = get_all_entries()
+                if id is not None:
+                    response = get_single_entry(id)
+                else:
+                    response = get_all_entries()
         else:
             (resource, query) = parsed
         self.wfile.write(json.dumps(response).encode())
+
+    def do_POST(self):
+        """function for posting new dictionaries"""
+        self._set_headers(201)
+        content_len = int(self.headers.get('content-length', 0))
+        print(content_len)
+        post_body = self.rfile.read(content_len)
+        post_body = json.loads(post_body)
+        (resource, id) = self.parse_url(self.path)
+        new_entry = None
+        if resource == "entries":
+            new_entry = create_entry(post_body)
+            self.wfile.write(json.dumps(new_entry).encode())
 
     def _set_headers(self, status):
         # Notice this Docstring also includes information about the arguments passed to the function
