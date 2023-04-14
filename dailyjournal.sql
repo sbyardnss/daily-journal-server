@@ -41,4 +41,3 @@ INSERT INTO `Entry_Tags` VALUES (null, 4, 3);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 1);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 2);
 
-DROP TABLE `Entries`;
