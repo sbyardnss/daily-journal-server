@@ -25,7 +25,7 @@ def get_all_entries():
         for row in dataset:
             entry = Entry(row['id'], row['concept'],
                           row['entry'], row['mood_id'], row['date'])
-            mood = Mood(row['id'], row['label'])
+            mood = Mood(row['mood_id'], row['label'])
             entry.mood = mood.__dict__
             entries.append(entry.__dict__)
     return entries
@@ -91,6 +91,24 @@ def create_entry(new_entry):
         new_entry['id'] = id
     return new_entry
 
+def update_entry(id, new_entry):
+    """sql update entry function"""
+    with sqlite3.connect("./dailyjournal.sqlite3") as conn:
+        conn.row_factory = sqlite3.Row
+        db_cursor = conn.cursor()
+        db_cursor.execute("""
+        UPDATE Entries
+            SET
+                concept = ?,
+                entry = ?,
+                mood_id = ?,
+                date = ?
+            WHERE id = ?;
+            """, (new_entry['concept'], new_entry['entry'], new_entry['mood_id'], new_entry['date'], id))
+    rows_affected = db_cursor.rowcount
+    if rows_affected == 0:
+        return False
+    return True
 
 def delete_entry(id):
     """sql delete entry function"""

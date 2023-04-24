@@ -1,7 +1,7 @@
 from urllib.parse import urlparse, parse_qs
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_entries, get_single_entry, create_entry, delete_entry, get_all_moods, search_entries
+from views import get_all_entries, get_single_entry, create_entry, delete_entry, get_all_moods, search_entries, update_entry
 
 
 class HandleRequests(BaseHTTPRequestHandler):
@@ -20,7 +20,7 @@ class HandleRequests(BaseHTTPRequestHandler):
                     response = get_single_entry(id)
                 else:
                     response = get_all_entries()
-            if  resource == "moods":
+            if resource == "moods":
                 response = get_all_moods()
         else:
             (resource, query) = parsed
@@ -40,6 +40,20 @@ class HandleRequests(BaseHTTPRequestHandler):
         if resource == "entries":
             new_entry = create_entry(post_body)
             self.wfile.write(json.dumps(new_entry).encode())
+
+    def do_PUT(self):
+        """function for handling put requests"""
+        content_len = int(self.headers.get("content-length", 0))
+        post_body = self.rfile.read(content_len)
+        post_body = json.loads(post_body)
+        resource, id = self.parse_url(self.path)
+        success = False
+        if resource == "entries":
+            success = update_entry(id, post_body)
+        if success:
+            self._set_headers(204)
+        else:
+            self._set_headers(404)
 
     def do_DELETE(self):
         """function for handling delete requests to server"""
