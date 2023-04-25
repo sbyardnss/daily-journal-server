@@ -1,6 +1,6 @@
 import json
 import sqlite3
-from models import Entry, Mood
+from models import Entry, Mood, Entry_tag
 
 
 def get_all_entries():
