@@ -41,3 +41,25 @@ INSERT INTO `Entry_Tags` VALUES (null, 4, 3);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 1);
 INSERT INTO `Entry_Tags` VALUES (null, 9, 2);
 
+
+UPDATE 'ENTRY_TAGS'
+SET entry_id = 2
+WHERE entry_id = 9
+
+
+SELECT DISTINCT
+            e.id,
+            e.concept,
+            e.entry,
+            e.mood_id,
+            e.date,
+            m.label,
+            (
+            SELECT GROUP_CONCAT(t.id)
+            FROM Entry_tags et JOIN tags t ON et.tag_id = t.id
+            WHERE et.entry_id = e.id
+            ) as entry_tags
+        FROM Entries e
+        JOIN Moods m
+            ON m.id = e.mood_id
+        LEFT OUTER JOIN entry_tags et ON e.id = et.entry_id

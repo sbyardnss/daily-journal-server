@@ -1,6 +1,7 @@
 import json
 import sqlite3
 from models import Entry, Mood, Entry_tag
+from .tag_requests import get_single_tag
 
 
 def get_all_entries():
@@ -9,16 +10,23 @@ def get_all_entries():
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
         db_cursor.execute("""
-        SELECT
+        SELECT DISTINCT
             e.id,
             e.concept,
             e.entry,
             e.mood_id,
             e.date,
-            m.label
+            m.label,
+            (
+            SELECT GROUP_CONCAT(t.id)
+            FROM Entry_tags et JOIN tags t ON et.tag_id = t.id
+            WHERE et.entry_id = e.id
+            ) as entry_tags
         FROM Entries e
         JOIN Moods m
             ON m.id = e.mood_id
+        LEFT OUTER JOIN entry_tags et ON e.id = et.entry_id
+        LEFT OUTER JOIN TAGS t ON t.id = et.tag_id
         """)
         entries = []
         dataset = db_cursor.fetchall()
@@ -27,6 +35,12 @@ def get_all_entries():
                           row['entry'], row['mood_id'], row['date'])
             mood = Mood(row['mood_id'], row['label'])
             entry.mood = mood.__dict__
+            entry_tags = row['entry_tags'].split(',') if row['entry_tags'] else []
+            entry_tags_arr = []
+            for tag_id in entry_tags:
+                tag_object = get_single_tag(tag_id)
+                entry_tags_arr.append(tag_object)
+            entry.entry_tags = entry_tags_arr
             entries.append(entry.__dict__)
     return entries
 
@@ -82,6 +96,14 @@ def create_entry(new_entry):
         conn.row_factory = sqlite3.Row
         db_cursor = conn.cursor()
         db_cursor.execute("""
+        SELECT *
+            FROM Entries e
+            LEFT OUTER JOIN Entry_tags et
+                on e.id = et.entry_id
+            LEFT OUTER JOIN TAGS t
+                on t.id = et.tag_id
+        """)
+        db_cursor.execute("""
         INSERT INTO Entries
             (concept, entry, mood_id, date)
         VALUES
@@ -89,7 +111,16 @@ def create_entry(new_entry):
         """, (new_entry['concept'], new_entry['entry'], new_entry['mood_id'], new_entry['date'],))
         id = db_cursor.lastrowid
         new_entry['id'] = id
-    return new_entry
+        # loop below is looking for list property on entries
+        # that contains ONLY corresponding tag ids. not objects
+        for tag in new_entry['entry_tags']:
+            db_cursor.execute("""
+            INSERT INTO Entry_tags
+                (entry_id, tag_id)
+            VALUES
+                (?, ?)
+            """, (new_entry['id'], tag,))
+        return new_entry
 
 def update_entry(id, new_entry):
     """sql update entry function"""
